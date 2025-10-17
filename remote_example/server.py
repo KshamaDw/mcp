@@ -2,7 +2,11 @@ from mcp.server.fastmcp import FastMCP
 import json
 import re
 import uvicorn
+import os
 
+HOST = os.environ.get('HOST', '0.0.0.0')
+PORT = os.environ.get('PORT', 8000)
+    
 server = FastMCP(name='vocabulary-server')
 
 @server.tool()
@@ -48,7 +52,4 @@ def vocabulary_prompt():
     return prompt
 
 if __name__ == '__main__':
-    host = '0.0.0.0'
-    port = 8050
-
-    uvicorn.run(server.streamable_http_app(), host=host, port=port)
+    uvicorn.run(server.streamable_http_app(), host=HOST, port=PORT)
