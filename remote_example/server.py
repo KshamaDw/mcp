@@ -1,15 +1,9 @@
 from mcp.server.fastmcp import FastMCP
 import json
 import re
+import uvicorn
 
-host = '0.0.0.0'
-port = 8050
-streamable_http_path ='/mcp'
-
-server = FastMCP(name='vocabulary-server', 
-                 host=host, 
-                 port=port, 
-                 streamable_http_path=streamable_http_path)
+server = FastMCP(name='vocabulary-server')
 
 @server.tool()
 def analyze_text(text: str) -> dict:
@@ -54,4 +48,7 @@ def vocabulary_prompt():
     return prompt
 
 if __name__ == '__main__':
-    server.run(transport='streamable-http')
+    host = '0.0.0.0'
+    port = 8050
+
+    uvicorn.run(server.streamable_http_app(), host=host, port=port)
