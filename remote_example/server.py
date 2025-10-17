@@ -30,14 +30,16 @@ def analyze_text(text: str) -> dict:
 @server.resource('file://stop_words.json')
 def stop_words():
     """Returns a list of stop words in English."""
-    with open('stop_words.json', 'r') as f:
+    file_path = os.path.join(os.path.dirname(__file__), 'stop_words.json')
+    with open(file_path, 'r') as f:
         stop_words_list = json.load(f)
     return stop_words_list
     
 @server.resource('greeting://{name}')
 def personalized_greet(name: str) -> str:
     """Return a personalized greeting message."""
-    with open('greeting.txt', 'r') as f:
+    file_path = os.path.join(os.path.dirname(__file__), 'greeting.txt')
+    with open(file_path, 'r') as f:
         greeting = f.read().strip()
     return f"Hello, {name}! {greeting}"
 
