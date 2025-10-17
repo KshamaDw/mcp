@@ -3,6 +3,8 @@ import json
 import re
 import uvicorn
 import os
+import logging
+logging.basicConfig(level=logging.WARNING)
 
 HOST = os.environ.get('HOST', '0.0.0.0')
 PORT = os.environ.get('PORT', 8000)
@@ -31,17 +33,25 @@ def analyze_text(text: str) -> dict:
 def stop_words():
     """Returns a list of stop words in English."""
     file_path = os.path.join(os.path.dirname(__file__), 'stop_words.json')
-    with open(file_path, 'r') as f:
-        stop_words_list = json.load(f)
-    return stop_words_list
+    try:
+        with open(file_path, 'r') as f:
+            stop_words_list = json.load(f)
+        return stop_words_list
+    except Exception as e:
+        logging.error(f"Error reading stop_words.json at {file_path}: {e}")
+        return []
     
 @server.resource('greeting://{name}')
 def personalized_greet(name: str) -> str:
     """Return a personalized greeting message."""
     file_path = os.path.join(os.path.dirname(__file__), 'greeting.txt')
-    with open(file_path, 'r') as f:
-        greeting = f.read().strip()
-    return f"Hello, {name}! {greeting}"
+    try:
+        with open(file_path, 'r') as f:
+            greeting = f.read().strip()
+        return f"Hello, {name}! {greeting}"
+    except Exception as e:
+        logging.error(f"Error reading greeting.txt at {file_path}: {e}")
+        return ""
 
 @server.prompt()
 def vocabulary_prompt():
@@ -54,4 +64,4 @@ def vocabulary_prompt():
     return prompt
 
 if __name__ == '__main__':
-    uvicorn.run(server.streamable_http_app(), host=HOST, port=PORT)
+    uvicorn.run(server.streamable_http_app(), host=HOST, port=int(PORT))
