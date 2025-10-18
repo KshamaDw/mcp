@@ -1,5 +1,3 @@
-
-
 # MCP Server for Vocabulary Analysis
 
 This server provides vocabulary analysis services over HTTP using the Model Context Protocol (MCP). It can analyze input text to compute word frequencies, character counts, and other vocabulary statistics. The server is designed to be used with tools like VS Code Copilot Chat and can be debugged using the MCP Inspector.
@@ -55,6 +53,21 @@ This server provides vocabulary analysis services over HTTP using the Model Cont
 
 1. The result will appear in the Copilot Chat panel after processing.
 2. Review the output and continue the conversation as needed.
+
+
+## Demonstrated MCP Capabilities
+
+### Server Primitives
+
+- **Tools**: Functions that process user input, e.g., `analyze_text` for vocabulary analysis.
+- **Resources**: Data endpoints, e.g., `file://stop_words.json` for stop words, `greeting://{name}` for personalized greetings.
+- **Prompts**: LLM prompts, e.g., `vocabulary_prompt` for constructing a vocabulary dictionary from text.
+
+### Client Primitives
+
+- **Sampling**: The server can ask the client to (ideally) sample from an LLM and send the response back to the server. Herein, it asks for user input to put the text for the `get_keywords` tool.
+- **Elicitation**: The server can ask the client to get user input (via `input()` calls).
+- **Logging**: Since the server runs remotely, it can send log messages to be displayed by the client.
 
 ---
 If you encounter issues, ensure your MCP server is running and accessible at the specified URL.

@@ -1,8 +1,21 @@
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.types import SamplingMessage, TextContent
+from collections import Counter
+from pydantic import BaseModel, Field
 import json
 import re
 import uvicorn
 import os
+import nltk
+import ssl
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+nltk.download('wordnet')
+
 import logging
 logging.basicConfig(level=logging.WARNING)
 
@@ -10,6 +23,11 @@ HOST = os.environ.get('HOST', '0.0.0.0')
 PORT = os.environ.get('PORT', 8000)
     
 server = FastMCP(name='vocabulary-server')
+lemmatizer = nltk.stem.WordNetLemmatizer()
+
+class VocabularyElicitationSchema(BaseModel):
+    """Schema for eliciting user preference for lemmatization."""
+    lemmatize: int = Field(description="Whether to lemmatize the words or not", default=1)
 
 @server.tool()
 def analyze_text(text: str) -> dict:
@@ -28,6 +46,55 @@ def analyze_text(text: str) -> dict:
         'word_frequency': {word: words.count(word) for word in set(words)}
     }
     return analysis
+
+@server.tool()
+async def get_keywords(ctx: Context) -> dict:
+    """Extract keywords from input text by lemmatizing and counting occurrences."""
+    def get_wordnet_pos(word):
+        """Map POS tag to first character lemmatize() accepts"""
+        tag = nltk.pos_tag([word])[0][1][0].upper()
+        tag_dict = {"J": 'a', "N": 'n', "V": 'v', "R": 'r'}
+        return tag_dict.get(tag, 'n')
+    
+    sampling_response = await ctx.session.create_message(
+        messages=[SamplingMessage(
+            role="user",
+            content=TextContent(type='text',text="Enter your input for the get_keywords tool: "))],
+        max_tokens=100,
+    )
+
+    text = sampling_response.content.text
+    text = text.lower()
+    text = text.replace('\n', ' ')
+    text = text.strip()
+    text = re.sub(r'[^\w\s]', '', text) # remove punctuation
+    words = text.split()
+    counts = {word: words.count(word) for word in set(words)}
+
+    await ctx.log('info', f"Word Counts for input text: {counts}")
+
+    elicit_response = await ctx.elicit(
+        message='Enter your choice to lemmatize words (0: no, 1: yes): ', 
+        schema=VocabularyElicitationSchema)
+    
+    if elicit_response.action == 'accept' and elicit_response.data:
+        lemmatize_flag = bool(elicit_response.data.lemmatize)
+    else:
+        lemmatize_flag = True
+    
+    if lemmatize_flag:
+        base_forms = {word: lemmatizer.lemmatize(word, get_wordnet_pos(word)) for word in counts.keys()}
+        base_counts = {}
+        for word in words:
+            base_word = base_forms[word]
+            if base_word in base_counts:
+                base_counts[base_word] += counts[word]
+            else:
+                base_counts[base_word] = counts[word]
+        base_counts = Counter(base_counts)
+    else:
+        base_counts = Counter(counts)
+    return base_counts
 
 @server.resource('file://stop_words.json')
 def stop_words():

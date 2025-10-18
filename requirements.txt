@@ -1,3 +1,4 @@
 mcp[cli]
+nltk
 uv
 uvicorn
