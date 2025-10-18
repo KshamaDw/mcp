@@ -50,7 +50,7 @@ async def main():
             response = await session.call_tool(tools_list.tools[0].name, {"text": user_query})
             logging.info(f"\nTool response: {json.loads(response.content[0].text)}\n")
 
-            response = await session.call_tool(tools_list.tools[1].name, {})
+            response = await session.call_tool(tools_list.tools[1].name)
             logging.info(f"\nTool response: {json.loads(response.content[0].text)}\n")
 
             resources_list = await session.list_resources()
